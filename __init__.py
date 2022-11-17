@@ -21,7 +21,7 @@ bl_info = {
     "author" : "xr.tools",
     "description" : "",
     "blender" : (2, 80, 0),
-    "version" : (0, 7, 8),
+    "version" : (0, 8, 0),
     "location" : "",
     "warning" : "",
     "category" : "Animation"
