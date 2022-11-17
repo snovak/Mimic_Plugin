@@ -11,6 +11,11 @@
 # You should have received a copy of the GNU General Public License
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
 
+# Notes
+# from pprint import pprint
+# pprint(vars(my_object))
+# dir()
+
 bl_info = {
     "name" : "Mimic",
     "author" : "xr.tools",
@@ -23,40 +28,80 @@ bl_info = {
 }
 
 import socket
+import re
 
 import bpy
 from bpy.props import *
 
 def getCollection():
-    if 'MimicCollection' not in bpy.data.collections:
+    collection = None
 
-        bpy.ops.collection.create(name = 'MimicCollection')
-        bpy.data.collections[0].children.link(bpy.data.collections['MimicCollection'])
-        return bpy.data.collections['MimicCollection']
+    for child in bpy.context.collection.children:
+        if re.search('MimicCollection', child.name):
+            collection = child
+
+    if collection:
+        return collection
     else :
-        return bpy.data.collections['MimicCollection']
+        # bpy.ops.collection.create(name = 'MimicCollection')
+        collection = bpy.data.collections.new("MimicCollection")
+        print('should be collection')
+        print(collection)
+        bpy.context.collection.children.link(collection)
+        # bpy.context.scene.children.link(bpy.data.collections['MimicCollection'])
+        return collection
 
 def getMimicRoot():
-    if bpy.data.objects.get("MimicRoot") is None:
-        print("Creating MimicRoot")
-        # collection = getCollection()
-        bpy.ops.object.empty_add(type='PLAIN_AXES', location=(0, 0, 0))
-        parent_obj = bpy.context.active_object
-        # parent_obj = bpy.data.objects.new(type='EMPTY', name="MimicRoot", enter_editmode=False)
-        parent_obj.name = "MimicRoot"
-        parent_obj.empty_display_size = 0.2
-        parent_obj.empty_display_type = 'ARROWS'
-        # bpy.context.scene.collection.objects.link( parent_obj )
-        # parent_obj.rotation_mode = "XYZ"
-        # parent_obj.rotation_euler.x = math.radians(90)
-        
-        # collection.add( obj )
-        # collection.objects.link(parent_obj)
-        return parent_obj
+    mimicRoot = None
+    for obj in bpy.context.scene.objects:
+        if re.search('MimicRoot', obj.name):
+            mimicRoot = obj
+
+    if mimicRoot:
+        return mimicRoot
     else:
-        print("Found MimicRoot linking") 
-        parent_obj = bpy.data.objects.get("MimicRoot")
-        return(parent_obj)
+        print("Creating MimicRoot")
+        collection = getCollection()
+        # print('should be collection')
+        # print(collection)
+        
+        bpy.ops.object.armature_add(enter_editmode=True, align='WORLD', location=(0, 0, 0), scale=(1, 1, 1))
+        armature = bpy.context.active_object
+        armature.name = "MimicRoot"
+        armature.data.name = "MimicArmature"
+        # print('should be armature')
+        # print(armature)
+        collection.objects.link(armature)
+        bpy.context.collection.objects.unlink(armature)
+        
+
+        return armature
+
+def getBone(name):
+
+    mimicArmaturePose = getMimicRoot().pose
+    result = None
+    for bone in mimicArmaturePose.bones:
+        if re.search(name, bone.name):
+            result = bone
+
+    if result:
+        return result
+    else:
+        mimicArmature = getMimicRoot().data
+        bpy.ops.object.mode_set(mode='EDIT', toggle=False)
+        edit_bones = mimicArmature.edit_bones
+        bone = edit_bones.new(name)
+        bone.head = (0, 0, 0) # if the head and tail are the same, the bone is deleted
+        bone.tail = (0, 0, 1)
+        bpy.ops.object.mode_set(mode='OBJECT', toggle=False)
+        # return(bone)
+        #return pose bone instead
+        return(getMimicRoot().pose.bones[name])
+
+
+
+    
 
 def set_location(objects, ob_name, ob_val):
     #objects - list of initialized tracking objects
@@ -66,7 +111,7 @@ def set_location(objects, ob_name, ob_val):
         try:
             i = 0
             if len(s) != 0:
-                print ("set_location: Array len %s." % (len(s)))
+                # print ("set_location: Array len %s." % (len(s)))
                 s_arr = s.split(",")
                 for val in s_arr:
                     s_arr[i] = float(val)
@@ -78,39 +123,42 @@ def set_location(objects, ob_name, ob_val):
         except Exception as e:
             print("ERROR: set_location > str_vec : %s" % e)
     
-    try:
-        if ob_name not in objects.keys():
-            print("set_location > new object: " + ob_name)
-            MimicRoot = getMimicRoot()
-            bpy.ops.object.add()
-            ob = bpy.context.object
+    # try:
+    #     if ob_name not in objects.keys():
+    #         print("set_location > new object: " + ob_name)
+    #         mimicRoot = getMimicRoot()
 
-            ob.parent = MimicRoot
-            ob.empty_display_size = 0.2
-            ob.name = ob_name
-    except Exception as e:
-        print("set_location > new object ERROR: %s" % e )
+    #         bpy.ops.object.add()
+    #         ob = bpy.context.object
+
+    #         ob.parent = mimicRoot
+    #         # ob.empty_display_size = 0.2
+    #         ob.name = ob_name
+    # except Exception as e:
+    #     print("set_location > new object ERROR: %s" % e )
 
     try:    
         s_arr_val = ob_val.split(";")
         if len(s_arr_val) == 1:
-            #TODO: set x to val
-            objects[ob_name].location[0] = float(s_arr_val[0])
+            # set x to val
+            bone = getBone(ob_name)
+            bone.location[0] = float(s_arr_val[0])
             if(bpy.context.scene.Mimic_auto_record):
-                objects[ob_name].keyframe_insert(data_path="location")
+                bone.keyframe_insert(data_path="location")
         else:
+            bone = getBone(ob_name)
             #set position
             position = str_vec(s_arr_val[0])
-            objects[ob_name].location = position
+            bone.location = position
             if(bpy.context.scene.Mimic_auto_record):
-                objects[ob_name].keyframe_insert(data_path="location")
+                bone.keyframe_insert(data_path="location")
 
             #set rotation
             rotation = str_vec(s_arr_val[1])
-            objects[ob_name].rotation_mode = 'QUATERNION'
-            objects[ob_name].rotation_quaternion = rotation
+            bone.rotation_mode = 'QUATERNION'
+            bone.rotation_quaternion = rotation
             if(bpy.context.scene.Mimic_auto_record):
-                objects[ob_name].keyframe_insert(data_path="rotation_quaternion")
+                bone.keyframe_insert(data_path="rotation_quaternion")
     except Exception as e:
         print("set_location ERROR: %s" % e)
         raise
@@ -142,7 +190,7 @@ class MimicReceiver():
             decoded = data.decode('ascii')
 
             # print (type(decoded))
-            print(decoded)
+            # print(decoded)
 
             frameNum = 0
             frameStr = decoded.split("|",1)[0].split("s",1 )[1]
@@ -162,22 +210,24 @@ class MimicReceiver():
 
             for arr in newValues:
                 arr = arr.split(":")
-                try:
-                    if(len(arr) == 2):
-                        set_location_func(objects, arr[0], arr[1])
+                if(len(arr) == 2):
+                    set_location_func(objects, arr[0], arr[1])
+                # try:
+                #     if(len(arr) == 2):
+                #         set_location_func(objects, arr[0], arr[1])
 
-                except Exception as e:
-                    print("run > set_location_func ERROR: %s" % e)
-                    print("vals count: %s" % len(arr) )
-                    print("decoded: %s" % decoded )
-                    print("newValues: %s" % newValues )
-                    raise Exception("Error parsing incoming data.")
+                # except Exception as e:
+                #     print("run > set_location_func ERROR: %s" % e)
+                #     print("vals count: %s" % len(arr) )
+                #     print("decoded: %s" % decoded )
+                #     print("newValues: %s" % newValues )
+                #     raise Exception("Error parsing incoming data.")
 
             #clear buffer                   
             try:
                 while self.sock.recv(1024): pass
             except:
-                print("buffer empty")
+                # print("buffer empty")
                 pass
             receive = False 
 
@@ -195,7 +245,7 @@ class MimicReceiver():
         self.location_dict = {}
         self.rotation_dict = {}
         
-        print("Hi, Mimic listening on port " + str(UDP_PORT))
+        print("Mimic listening on port " + str(UDP_PORT))
 
     def __del__(self):
         self.sock.close()
@@ -223,7 +273,7 @@ class Mimic(bpy.types.Operator):
         
         if event.type == 'TIMER':
             try:
-                self.receiver.run(bpy.data.objects, set_location)
+                self.receiver.run(bpy.data.armatures, set_location)
             except Exception as e:
                 print("Mimic.modal: ERROR: %s" % (e))
                 Mimic.disable()
@@ -253,6 +303,22 @@ class Mimic(bpy.types.Operator):
     def disable(cls):
         if cls.enabled:
             cls.enabled = False
+###
+### TEST
+###
+class MimicTest(bpy.types.Operator):
+    bl_idname = "wm.mimic_test"
+    bl_label = "Test"
+    bl_description = "Test"
+    bl_options = {'REGISTER'}
+    
+    def execute(self, context):
+        # collection = getCollection()
+        # print(collection)
+        # mimicRoot = getMimicRoot()
+        bone = getBone('test')
+        print(bone)
+        return {'PASS_THROUGH'}     
 
 class MimicStop(bpy.types.Operator):
     bl_idname = "wm.mimic_stop"
@@ -263,6 +329,8 @@ class MimicStop(bpy.types.Operator):
     def execute(self, context):
         Mimic.disable()
         return {'FINISHED'}
+
+
     
     
 class VIEW3D_PT_Panel_Mimic(bpy.types.Panel):
@@ -291,6 +359,9 @@ class VIEW3D_PT_Panel_Mimic(bpy.types.Panel):
         col.enabled = not Mimic.enabled
         col.prop(context.scene, "Mimic_port", text="Port:")
         col.prop(context.scene, "Mimic_auto_record", text="Auto Record")
+
+
+        layout.operator("wm.mimic_test", text="Test")
         
         if(Mimic.enabled):
             self.layout.operator("wm.mimic_stop", text="Stop")
@@ -340,6 +411,7 @@ def clear_properties():
 classes = (
     Mimic,
     MimicStop,
+    MimicTest,
     VIEW3D_PT_Panel_Mimic
 )
 
