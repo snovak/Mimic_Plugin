@@ -361,7 +361,7 @@ class VIEW3D_PT_Panel_Mimic(bpy.types.Panel):
         col.prop(context.scene, "Mimic_auto_record", text="Auto Record")
 
 
-        layout.operator("wm.mimic_test", text="Test")
+        #layout.operator("wm.mimic_test", text="Test")
         
         if(Mimic.enabled):
             self.layout.operator("wm.mimic_stop", text="Stop")
