@@ -33,6 +33,8 @@ import re
 import bpy
 from bpy.props import *
 
+from .scripts import MimicConnectFaceShapes
+
 def getCollection():
     collection = None
 
@@ -368,7 +370,23 @@ class VIEW3D_PT_Panel_Mimic(bpy.types.Panel):
         else:
             self.layout.operator("wm.mimic_start", text="Listen")
             
+class VIEW3D_PT_Panel_Mimic_Scripts(bpy.types.Panel):
+    bl_space_type = "VIEW_3D"
+    bl_region_type = "UI"
+    bl_label = "Mimic Scripts"
+    bl_category = "XR Tools"
+    
+    def draw(self, context):
+        scene = bpy.types.Scene
 
+        measure_size = 0.6
+        unit_size = 0.3
+
+        layout = self.layout
+        layout.use_property_split = True
+        col = layout.column()
+
+        self.layout.operator("wm.mimic_connectfaceshapes", text="Connect Face Shapes")
 
             
 def init_properties():
@@ -412,7 +430,9 @@ classes = (
     Mimic,
     MimicStop,
     MimicTest,
-    VIEW3D_PT_Panel_Mimic
+    VIEW3D_PT_Panel_Mimic,
+    VIEW3D_PT_Panel_Mimic_Scripts,
+    MimicConnectFaceShapes.MimicConnectFaceShapes
 )
 
 def register():
