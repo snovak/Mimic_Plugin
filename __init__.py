@@ -34,7 +34,7 @@ import bpy
 from bpy.props import *
 
 from .scripts import MimicConnectFaceShapes
-from .scripts import GenerateShapeKeys
+from .scripts import ShapeKeys
 
 def getCollection():
     collection = None
@@ -388,7 +388,9 @@ class VIEW3D_PT_Panel_Mimic_Scripts(bpy.types.Panel):
         col = layout.column()
 
         self.layout.operator("wm.mimic_connectfaceshapes", text="Connect Face Shapes")
-        self.layout.operator("wm.mimic_testbutton", text="Test Button")
+
+        self.layout.operator("wm.mimic_list_bones", text="List Bones")
+        self.layout.operator("wm.mimic_add_face_shapes", text="Add Face Shapes")
 
             
 def init_properties():
@@ -435,7 +437,8 @@ classes = (
     VIEW3D_PT_Panel_Mimic,
     VIEW3D_PT_Panel_Mimic_Scripts,
     MimicConnectFaceShapes.MimicConnectFaceShapes,
-    GenerateShapeKeys.GenerateShapeKeys
+    ShapeKeys.ListBones,
+    ShapeKeys.AddShapeKeys
 )
 
 def register():

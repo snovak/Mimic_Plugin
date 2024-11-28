@@ -22,7 +22,7 @@ class MimicConnectFaceShapes(bpy.types.Operator):
     #            return 0
             # if face_obj is of type object and has > 10 shape keys 
             if not bpy.context.selected_objects[0].name == 'MimicRoot':
-                raise Exception("Mimic Root should be selected first")
+                raise Exception("Mimic Root should be selected first, not " + bpy.context.selected_objects[0].name)
                 return
             else:
                 print('Selection PASS')
