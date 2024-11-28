@@ -21,7 +21,7 @@ bl_info = {
     "author" : "xr.tools",
     "description" : "",
     "blender" : (2, 80, 0),
-    "version" : (0, 8, 0),
+    "version" : (0, 8, 2),
     "location" : "",
     "warning" : "",
     "category" : "Animation"
@@ -34,6 +34,7 @@ import bpy
 from bpy.props import *
 
 from .scripts import MimicConnectFaceShapes
+from .scripts import GenerateShapeKeys
 
 def getCollection():
     collection = None
@@ -387,6 +388,7 @@ class VIEW3D_PT_Panel_Mimic_Scripts(bpy.types.Panel):
         col = layout.column()
 
         self.layout.operator("wm.mimic_connectfaceshapes", text="Connect Face Shapes")
+        self.layout.operator("wm.mimic_testbutton", text="Test Button")
 
             
 def init_properties():
@@ -432,7 +434,8 @@ classes = (
     MimicTest,
     VIEW3D_PT_Panel_Mimic,
     VIEW3D_PT_Panel_Mimic_Scripts,
-    MimicConnectFaceShapes.MimicConnectFaceShapes
+    MimicConnectFaceShapes.MimicConnectFaceShapes,
+    GenerateShapeKeys.GenerateShapeKeys
 )
 
 def register():
