@@ -16,19 +16,27 @@ class MimicConnectFaceShapes(bpy.types.Operator):
 
     def checkSelection(self):
         try:
-            # if selected objects is 2
-    #        if not len(bpy.context.selected_objects) == 2:
-    #            raise Exception("There should be 2 objects selected. First, select the face object, with shape keys.  Then select Mimic Root object.")
-    #            return 0
-            # if face_obj is of type object and has > 10 shape keys 
-            if not bpy.context.selected_objects[0].name == 'MimicRoot':
-                raise Exception("Mimic Root should be selected first")
+            mimic_root = None
+            face_obj = None
+            
+            # Find MimicRoot in all objects
+            for obj in bpy.context.selected_objects:
+                if re.match(r'^MimicRoot', obj.name):
+                    mimic_root = obj
+                else:
+                    face_obj = obj
+            
+            if not mimic_root:
+                raise Exception("An object starting with 'MimicRoot' must be selected")
                 return
-            else:
-                print('Selection PASS')
-                for i in range(len(bpy.context.selected_objects)):
-                    if i > 0:
-                        self.connectDrivers(bpy.context.selected_objects[0], bpy.context.selected_objects[i])
+            
+            if not face_obj:
+                raise Exception("A second object with shape keys must also be selected")
+                return
+                
+            print('Selection PASS')
+            self.connectDrivers(mimic_root, face_obj)
+                
         except Exception as e:
             print('Selection Check ERROR:')
             print(e)
@@ -93,7 +101,7 @@ class MimicConnectFaceShapes(bpy.types.Operator):
                         
                         # rename / translate block key names by changing keyblock.name
             else:
-                print('no shape')
+                print('No shape keys on the selected object.')
 
         except Exception as e:
             print("error in connectDrivers")
@@ -124,5 +132,3 @@ class MimicConnectFaceShapes(bpy.types.Operator):
     #        return(True)
     #
         return(False)
-
-    #checkSelection()
